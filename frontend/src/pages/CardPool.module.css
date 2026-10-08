@@ -1,0 +1,90 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.filterBar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filterInput {
+  width: 180px;
+}
+.bulkBar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.table tr:last-child td {
+  border-bottom: none;
+}
+.table tr.disabled {
+  opacity: 0.5;
+}
+.wordText {
+  font-weight: 600;
+  font-size: 15px;
+}
+.translation {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+.stateBadge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.stateBadge[data-state="NEW"] {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.stateBadge[data-state="LEARNING"] {
+  background: #fef3c7;
+  color: #854d0e;
+}
+.stateBadge[data-state="REVIEW"] {
+  background: #d1fae5;
+  color: #065f46;
+}
+.meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.actions {
+  display: flex;
+  gap: 6px;
+}
+.disabled {
+  opacity: 0.5;
+}

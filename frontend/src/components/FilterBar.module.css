@@ -1,0 +1,18 @@
+.bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.bar > * {
+  flex: 0 1 auto;
+}
+.bar .search {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+.bar select {
+  width: auto;
+  min-width: 140px;
+}
