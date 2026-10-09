@@ -32,7 +32,7 @@ export default function Practice() {
       if (config.limit) params.limit = config.limit
       const cards = await practiceCards(params)
       if (cards.length === 0) {
-        setError('没有可练习的卡片，请先在单词库中为单词生成卡片。')
+        setError('没有可练习的卡片，请先在单词库添加单词，或在卡片池中启用卡片。')
         setQueue(null)
       } else {
         setQueue(cards)

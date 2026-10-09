@@ -17,6 +17,7 @@ public interface CardRepository extends JpaRepository<Card, Long> {
 
     long countByDueDateLessThanEqual(LocalDate date);
     void deleteByWordId(Long wordId);
+    void deleteByWordIdIn(java.util.Collection<Long> wordIds);
 
     @Query("SELECT c FROM Card c JOIN FETCH c.word")
     List<Card> findAllWithWord();
@@ -29,4 +30,7 @@ public interface CardRepository extends JpaRepository<Card, Long> {
 
     @Query("SELECT c FROM Card c JOIN FETCH c.word WHERE c.id IN :ids")
     List<Card> findByIdInWithWord(@Param("ids") List<Long> ids);
+
+    @Query("SELECT DISTINCT c.word.id FROM Card c")
+    List<Long> findAllWordIds();
 }

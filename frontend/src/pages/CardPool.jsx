@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { listCards, deleteCard, resetCard, batchSetEnabled } from '../api/cards.js'
+import { listCards, resetCard, batchSetEnabled } from '../api/cards.js'
 import EmptyState from '../components/EmptyState.jsx'
 import styles from './CardPool.module.css'
 
@@ -92,18 +92,6 @@ export default function CardPool() {
     }
   }
 
-  const onRemove = async (e, cardId) => {
-    e.stopPropagation()
-    if (!confirm('确认将该单词从练习池中移除？')) return
-    try {
-      await deleteCard(cardId)
-      setCards((prev) => prev.filter((c) => c.id !== cardId))
-      setSelected((prev) => { const next = new Set(prev); next.delete(cardId); return next })
-    } catch (err) {
-      alert(err.message)
-    }
-  }
-
   if (loading) return <p className="muted">加载中...</p>
 
   const enabledCount = cards.filter((c) => c.enabled).length
@@ -160,7 +148,7 @@ export default function CardPool() {
       {cards.length === 0 ? (
         <EmptyState
           title="练习池为空"
-          hint="前往单词库，点击「+ 卡片」将单词加入练习池。"
+          hint="前往单词库添加单词，新单词会自动进入练习池。"
         />
       ) : filtered.length === 0 ? (
         <p className="muted">当前筛选条件下没有卡片</p>
@@ -225,9 +213,6 @@ export default function CardPool() {
                   <div className={styles.actions}>
                     <button onClick={(e) => onReset(e, c.id)}>
                       重置
-                    </button>
-                    <button className="danger" onClick={(e) => onRemove(e, c.id)}>
-                      移除
                     </button>
                   </div>
                 </td>

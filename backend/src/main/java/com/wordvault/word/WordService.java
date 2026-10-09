@@ -1,6 +1,8 @@
 package com.wordvault.word;
 
 import com.wordvault.card.CardRepository;
+import com.wordvault.card.CardService;
+import com.wordvault.card.CardType;
 import com.wordvault.common.NotFoundException;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Sort;
@@ -16,10 +18,12 @@ public class WordService {
 
     private final WordRepository repository;
     private final CardRepository cardRepository;
+    private final CardService cardService;
 
-    public WordService(WordRepository repository, CardRepository cardRepository) {
+    public WordService(WordRepository repository, CardRepository cardRepository, CardService cardService) {
         this.repository = repository;
         this.cardRepository = cardRepository;
+        this.cardService = cardService;
     }
 
     @Transactional(readOnly = true)
@@ -63,7 +67,10 @@ public class WordService {
                 .source(req.source())
                 .familiarity(req.familiarity() == null ? 0 : req.familiarity())
                 .build();
-        return repository.save(w);
+        Word saved = repository.save(w);
+        // Every word is part of the practice pool by default; manage participation via the card's enabled flag.
+        cardService.createForWord(saved.getId(), CardType.EN_TO_CN);
+        return saved;
     }
 
     @Transactional
@@ -90,6 +97,14 @@ public class WordService {
         repository.deleteById(id);
     }
 
+    @Transactional
+    public void deleteAll(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return;
+        List<Long> distinct = ids.stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        cardRepository.deleteByWordIdIn(distinct);
+        repository.deleteAllByIdInBatch(distinct);
+    }
+
     @Transactional(readOnly = true)
     public List<String> allTags() {
         return repository.findAll().stream()
@@ -101,6 +116,19 @@ public class WordService {
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
+    }
+
+    /** Returns the subset of the given texts (case-insensitive) that already exist in the library. */
+    @Transactional(readOnly = true)
+    public Set<String> findExistingTexts(Collection<String> texts) {
+        List<String> normalized = texts.stream()
+                .filter(Objects::nonNull)
+                .map(t -> t.trim().toLowerCase())
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+        if (normalized.isEmpty()) return Set.of();
+        return new HashSet<>(repository.findExistingTextsLower(normalized));
     }
 
     private String normalizeTags(String raw) {

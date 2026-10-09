@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listWords, listTags, createCardForWord, importWords } from '../api/words.js'
-import { listCards } from '../api/cards.js'
+import { listWords, listTags, importWords, deleteWord, deleteWords } from '../api/words.js'
 import FilterBar from '../components/FilterBar.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import ImportModal from '../components/ImportModal.jsx'
@@ -11,17 +10,17 @@ export default function WordList() {
   const [filters, setFilters] = useState({ q: '', tag: '', familiarity: '' })
   const [words, setWords] = useState([])
   const [tags, setTags] = useState([])
-  const [cardWordIds, setCardWordIds] = useState(new Set())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showImport, setShowImport] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [selectionMode, setSelectionMode] = useState(false)
   const navigate = useNavigate()
 
-  const loadCards = useCallback(() => {
-    listCards().then((cards) => {
-      setCardWordIds(new Set(cards.map((c) => c.wordId)))
-    }).catch(() => {})
-  }, [])
+  const exitSelection = () => {
+    setSelectionMode(false)
+    setSelectedIds(new Set())
+  }
 
   const load = useCallback(() => {
     setLoading(true)
@@ -30,7 +29,10 @@ export default function WordList() {
     if (filters.tag) params.tag = filters.tag
     if (filters.familiarity !== '') params.familiarity = filters.familiarity
     listWords(params)
-      .then(setWords)
+      .then((data) => {
+        setWords(data)
+        setSelectedIds(new Set())
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [filters])
@@ -41,18 +43,50 @@ export default function WordList() {
   }, [load])
 
   useEffect(() => {
-    loadCards()
-  }, [loadCards])
-
-  useEffect(() => {
     listTags().then(setTags).catch(() => {})
   }, [words.length])
 
-  const addCard = async (e, id) => {
+  const onDelete = async (e, id) => {
     e.stopPropagation()
+    if (!confirm('确认删除该单词及其所有卡片？')) return
     try {
-      await createCardForWord(id)
-      setCardWordIds((prev) => new Set([...prev, id]))
+      await deleteWord(id)
+      setWords((prev) => prev.filter((w) => w.id !== id))
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  const toggleSelect = (e, id) => {
+    e.stopPropagation()
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) =>
+      prev.size === words.length ? new Set() : new Set(words.map((w) => w.id))
+    )
+  }
+
+  const onBatchDelete = async () => {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    if (!confirm(`确认删除选中的 ${ids.length} 个单词及其所有卡片？`)) return
+    try {
+      await deleteWords(ids)
+      const idSet = new Set(ids)
+      setWords((prev) => prev.filter((w) => !idSet.has(w.id)))
+      setSelectedIds(new Set())
     } catch (err) {
       alert(err.message)
     }
@@ -63,6 +97,11 @@ export default function WordList() {
       <div className={styles.header}>
         <h1>单词库</h1>
         <div className={styles.actions}>
+          {selectionMode ? (
+            <button onClick={exitSelection}>退出多选</button>
+          ) : (
+            <button onClick={() => setSelectionMode(true)}>批量管理</button>
+          )}
           <button onClick={() => setShowImport(true)}>导入 JSON</button>
           <Link to="/words/new">
             <button className="primary">+ 新增单词</button>
@@ -73,9 +112,8 @@ export default function WordList() {
       {showImport && (
         <ImportModal
           onClose={() => setShowImport(false)}
-          onImport={async (json) => {
-            const data = Array.isArray(json) ? json : [json]
-            const result = await importWords(data)
+          onImport={async (words) => {
+            const result = await importWords(words)
             load()
             return result
           }}
@@ -92,6 +130,16 @@ export default function WordList() {
 
       {error && <p style={{ color: 'var(--color-danger)' }}>{error}</p>}
 
+      {selectedIds.size > 0 && (
+        <div className={styles.batchBar}>
+          <span>已选 {selectedIds.size} 个</span>
+          <div className={styles.batchActions}>
+            <button onClick={() => setSelectedIds(new Set())}>取消选择</button>
+            <button className="danger" onClick={onBatchDelete}>删除选中</button>
+          </div>
+        </div>
+      )}
+
       {!loading && words.length === 0 ? (
         <EmptyState
           title="还没有单词"
@@ -101,19 +149,38 @@ export default function WordList() {
         <table className={styles.table}>
           <thead>
             <tr>
+              {selectionMode && (
+                <th style={{ width: 36 }}>
+                  <input
+                    type="checkbox"
+                    checked={words.length > 0 && selectedIds.size === words.length}
+                    ref={(el) => {
+                      if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < words.length
+                    }}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
+              )}
               <th>单词</th>
               <th>词性</th>
               <th>标签</th>
               <th>熟悉度</th>
-              <th>卡片</th>
-              <th style={{ width: 120 }}>操作</th>
+              <th style={{ width: 190 }}>操作</th>
             </tr>
           </thead>
           <tbody>
             {words.map((w) => {
-              const hasCard = cardWordIds.has(w.id)
               return (
               <tr key={w.id} onClick={() => navigate(`/words/${w.id}`)}>
+                {selectionMode && (
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(w.id)}
+                      onChange={(e) => toggleSelect(e, w.id)}
+                    />
+                  </td>
+                )}
                 <td>
                   <div className={styles.wordText}>{w.text}</div>
                   {w.translation && <div className={styles.translation}>{w.translation}</div>}
@@ -135,19 +202,8 @@ export default function WordList() {
                   </span>
                 </td>
                 <td>
-                  {hasCard ? (
-                    <span className={styles.cardBadge}>已加入</span>
-                  ) : (
-                    <span className={styles.cardBadgeNone}>未加入</span>
-                  )}
-                </td>
-                <td>
                   <div className={styles.actions}>
-                    {hasCard ? (
-                      <button disabled style={{ opacity: 0.5 }}>已在池中</button>
-                    ) : (
-                      <button onClick={(e) => addCard(e, w.id)}>+ 卡片</button>
-                    )}
+                    <button className="danger" onClick={(e) => onDelete(e, w.id)}>删除</button>
                   </div>
                 </td>
               </tr>

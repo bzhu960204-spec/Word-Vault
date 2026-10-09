@@ -1,26 +1,21 @@
 package com.wordvault.word;
 
-import com.wordvault.card.CardDto;
-import com.wordvault.card.CardService;
-import com.wordvault.card.CardType;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/words")
 public class WordController {
 
     private final WordService service;
-    private final CardService cardService;
 
-    public WordController(WordService service, CardService cardService) {
+    public WordController(WordService service) {
         this.service = service;
-        this.cardService = cardService;
     }
 
     @GetMapping
@@ -59,6 +54,12 @@ public class WordController {
                 .toList();
     }
 
+    /** Returns the lower-cased texts (from the given list) that already exist, so the UI can flag duplicates. */
+    @PostMapping("/import/preview")
+    public Set<String> importPreview(@RequestBody List<String> texts) {
+        return service.findExistingTexts(texts == null ? List.of() : texts);
+    }
+
     @PutMapping("/{id}")
     public WordDto.Response update(@PathVariable Long id, @Valid @RequestBody WordDto.Request req) {
         return WordDto.Response.from(service.update(id, req));
@@ -70,12 +71,9 @@ public class WordController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/cards")
-    public CardDto.Response createCard(@PathVariable Long id, @RequestBody(required = false) Map<String, String> body) {
-        CardType type = CardType.EN_TO_CN;
-        if (body != null && body.get("type") != null) {
-            type = CardType.valueOf(body.get("type"));
-        }
-        return CardDto.Response.from(cardService.createForWord(id, type));
+    @PostMapping("/batch-delete")
+    public ResponseEntity<Void> batchDelete(@RequestBody List<Long> ids) {
+        service.deleteAll(ids);
+        return ResponseEntity.noContent().build();
     }
 }

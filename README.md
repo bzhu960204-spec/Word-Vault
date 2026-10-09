@@ -67,8 +67,9 @@ java -jar target/wordvault-backend-0.0.1-SNAPSHOT.jar
 | GET | `/api/words/tags` | 所有去重标签 |
 | GET/POST/PUT/DELETE | `/api/words[/{id}]` | 单词 CRUD |
 | POST | `/api/words/import` | 批量导入（body: JSON 数组，见下方） |
-| POST | `/api/words/{id}/cards` | 为单词生成卡片（body: `{type: "EN_TO_CN"}`） |
-| GET | `/api/cards?wordId=` | 卡片列表 |
+| GET | `/api/cards?wordId=` | 卡片列表（单词创建时自动建卡） |
+| POST | `/api/cards/batch-enabled` | 批量启用/禁用卡片（body: `{ids: [...], enabled: true}`） |
+| POST | `/api/cards/{id}/reset` | 重置卡片学习进度 |
 | DELETE | `/api/cards/{id}` | 删除卡片 |
 | GET | `/api/review/due` | 今日到期卡片 |
 | POST | `/api/review/{cardId}` | 提交评分（body: `{rating: "GOOD"}`） |

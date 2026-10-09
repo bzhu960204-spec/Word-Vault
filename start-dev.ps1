@@ -117,8 +117,37 @@ $frontendJob = Start-Job -Name 'wv-frontend' -ScriptBlock {
   & npm run dev -- --host 0.0.0.0 --port $Port 2>&1 | ForEach-Object { $_.ToString() }
 } -ArgumentList $frontendDir, $BackendPort, $FrontendPort
 
+# --- Start backend auto-recompile watcher (enables devtools hot reload) ---
+# Polls backend/src for .java changes and runs `mvn compile`, which updates
+# target/classes so spring-boot-devtools restarts the running app automatically.
+$watcherJob = Start-Job -Name 'wv-watcher' -ScriptBlock {
+  param([string]$Dir)
+  Set-Location $Dir
+  $srcDir = Join-Path $Dir 'src\main'
+  $lastHash = ''
+  while ($true) {
+    try {
+      $files = Get-ChildItem -Path $srcDir -Recurse -Include *.java, *.yml, *.yaml, *.properties -ErrorAction SilentlyContinue
+      $sig = ($files | ForEach-Object { "$($_.FullName)|$($_.LastWriteTimeUtc.Ticks)" }) -join ';'
+      $hash = [System.BitConverter]::ToString(
+        [System.Security.Cryptography.MD5]::Create().ComputeHash(
+          [System.Text.Encoding]::UTF8.GetBytes($sig)))
+      if ($lastHash -ne '' -and $hash -ne $lastHash) {
+        Write-Output "change detected -> recompiling..."
+        & mvn -o -q compile 2>&1 | ForEach-Object { $_.ToString() }
+        Write-Output "recompile done."
+      }
+      $lastHash = $hash
+    } catch {
+      Write-Output "watcher error: $($_.Exception.Message)"
+    }
+    Start-Sleep -Seconds 2
+  }
+} -ArgumentList $backendDir
+
 Write-Host ""
 Write-Host "Both services started. Press Ctrl+C to stop." -ForegroundColor Cyan
+Write-Host "  Backend hot reload: edit a .java/.yml file, it recompiles and devtools restarts." -ForegroundColor DarkGray
 Write-Host "  To stop without Ctrl+C: .\stop-dev.ps1" -ForegroundColor DarkGray
 Write-Host ""
 
@@ -134,6 +163,11 @@ try {
     Receive-Job -Job $frontendJob -ErrorAction SilentlyContinue | ForEach-Object {
       $hadOutput = $true
       Write-Host "[frontend] $_"
+    }
+
+    Receive-Job -Job $watcherJob -ErrorAction SilentlyContinue | ForEach-Object {
+      $hadOutput = $true
+      Write-Host "[watcher] $_"
     }
 
     $backendDone  = $backendJob.State  -in @('Completed', 'Failed', 'Stopped')
@@ -163,7 +197,10 @@ finally {
   if ($frontendJob.State -notin @('Completed', 'Failed', 'Stopped')) {
     Stop-Job -Job $frontendJob -Force -ErrorAction SilentlyContinue
   }
+  if ($watcherJob -and $watcherJob.State -notin @('Completed', 'Failed', 'Stopped')) {
+    Stop-Job -Job $watcherJob -Force -ErrorAction SilentlyContinue
+  }
 
-  Remove-Job -Job $backendJob, $frontendJob -Force -ErrorAction SilentlyContinue
+  Remove-Job -Job $backendJob, $frontendJob, $watcherJob -Force -ErrorAction SilentlyContinue
   Write-Host "Services stopped." -ForegroundColor Yellow
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { getWord, deleteWord, createCardForWord } from '../api/words.js'
-import { listCards, deleteCard } from '../api/cards.js'
+import { getWord, deleteWord } from '../api/words.js'
+import { listCards } from '../api/cards.js'
 import styles from './WordDetail.module.css'
 
 export default function WordDetail() {
@@ -24,21 +24,6 @@ export default function WordDetail() {
     if (!confirm('确认删除该单词及其所有卡片？')) return
     await deleteWord(id)
     navigate('/words')
-  }
-
-  const onAddCard = async () => {
-    try {
-      await createCardForWord(id)
-      load()
-    } catch (e) {
-      alert(e.message)
-    }
-  }
-
-  const onDeleteCard = async (cardId) => {
-    if (!confirm('删除该卡片？')) return
-    await deleteCard(cardId)
-    load()
   }
 
   if (error) return <p style={{ color: 'var(--color-danger)' }}>{error}</p>
@@ -109,26 +94,23 @@ export default function WordDetail() {
 
       <div className={styles.card}>
         <div className={styles.header}>
-          <h2 style={{ margin: 0 }}>Anki 卡片</h2>
-          <button className="primary" onClick={onAddCard} disabled={cards.length > 0}>
-            {cards.length > 0 ? '已生成' : '+ 生成卡片'}
-          </button>
+          <h2 style={{ margin: 0 }}>练习卡片</h2>
+          <Link to="/cards">
+            <button>前往卡片池</button>
+          </Link>
         </div>
         {cards.length === 0 ? (
-          <p className="muted">尚未生成任何卡片。</p>
+          <p className="muted">卡片加载中...</p>
         ) : (
           cards.map((c) => (
             <div key={c.id} className={styles.cardItem}>
               <div>
                 <strong>{c.type}</strong>
                 <div className={styles.cardMeta}>
-                  状态 {c.state} · 下次复习 {c.dueDate} · 间隔 {c.intervalDays}天 ·
+                  {c.enabled ? '已启用' : '已禁用'} · 状态 {c.state} · 下次复习 {c.dueDate} · 间隔 {c.intervalDays}天 ·
                   ease {c.easeFactor?.toFixed(2)} · 重复 {c.repetitions}
                 </div>
               </div>
-              <button className="danger" onClick={() => onDeleteCard(c.id)}>
-                删除
-              </button>
             </div>
           ))
         )}

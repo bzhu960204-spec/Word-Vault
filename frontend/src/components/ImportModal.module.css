@@ -12,7 +12,7 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   width: 90%;
-  max-width: 640px;
+  max-width: 720px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
@@ -62,4 +62,93 @@
   color: var(--color-success);
   font-size: 13px;
   margin-top: 8px;
+}
+
+.reviewBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.search {
+  flex: 1;
+  min-width: 160px;
+}
+.reviewActions {
+  display: flex;
+  gap: 6px;
+}
+.reviewActions button {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.reviewBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px;
+}
+.reviewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.reviewTable th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+.reviewTable td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.reviewTable tbody tr {
+  cursor: pointer;
+}
+.reviewTable tbody tr:hover {
+  background: var(--color-bg, rgba(0, 0, 0, 0.02));
+}
+.dupRow {
+  opacity: 0.6;
+}
+.wText {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wPos {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.wTrans {
+  color: var(--color-text);
+}
+.wTags {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  word-break: break-all;
+}
+.badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: 4px;
+  padding: 0 5px;
+  line-height: 1.5;
+}
+.counter {
+  margin-right: auto;
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
