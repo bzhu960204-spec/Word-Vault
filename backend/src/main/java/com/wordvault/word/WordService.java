@@ -1,6 +1,5 @@
 package com.wordvault.word;
 
-import com.wordvault.card.CardRepository;
 import com.wordvault.card.CardService;
 import com.wordvault.card.CardType;
 import com.wordvault.common.NotFoundException;
@@ -17,12 +16,10 @@ import java.util.stream.Collectors;
 public class WordService {
 
     private final WordRepository repository;
-    private final CardRepository cardRepository;
     private final CardService cardService;
 
-    public WordService(WordRepository repository, CardRepository cardRepository, CardService cardService) {
+    public WordService(WordRepository repository, CardService cardService) {
         this.repository = repository;
-        this.cardRepository = cardRepository;
         this.cardService = cardService;
     }
 
@@ -93,7 +90,7 @@ public class WordService {
         if (!repository.existsById(id)) {
             throw new NotFoundException("Word " + id + " not found");
         }
-        cardRepository.deleteByWordId(id);
+        cardService.deleteByWord(id);
         repository.deleteById(id);
     }
 
@@ -101,7 +98,7 @@ public class WordService {
     public void deleteAll(Collection<Long> ids) {
         if (ids == null || ids.isEmpty()) return;
         List<Long> distinct = ids.stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
-        cardRepository.deleteByWordIdIn(distinct);
+        cardService.deleteByWords(distinct);
         repository.deleteAllByIdInBatch(distinct);
     }
 

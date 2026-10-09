@@ -21,7 +21,7 @@ export default function WordDetail() {
   }, [load])
 
   const onDelete = async () => {
-    if (!confirm('确认删除该单词及其所有卡片？')) return
+    if (!confirm('确认删除该单词？将同时移出练习池并删除其所有卡片与复习记录。')) return
     await deleteWord(id)
     navigate('/words')
   }

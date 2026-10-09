@@ -103,6 +103,10 @@ export default function CardPool() {
         <span className="muted">共 {cards.length} 张卡片，已启用 {enabledCount} 张</span>
       </div>
 
+      <p className={styles.hint}>
+        卡片随单词库自动生成。勾选"启用"控制是否参与练习；如需彻底移除，请在单词库删除对应单词。
+      </p>
+
       {/* Filters */}
       <div className={styles.filterBar}>
         <input

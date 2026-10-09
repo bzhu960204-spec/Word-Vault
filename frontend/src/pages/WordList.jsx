@@ -48,7 +48,7 @@ export default function WordList() {
 
   const onDelete = async (e, id) => {
     e.stopPropagation()
-    if (!confirm('确认删除该单词及其所有卡片？')) return
+    if (!confirm('确认删除该单词？将同时移出练习池并删除其所有卡片与复习记录。')) return
     try {
       await deleteWord(id)
       setWords((prev) => prev.filter((w) => w.id !== id))
@@ -81,7 +81,7 @@ export default function WordList() {
   const onBatchDelete = async () => {
     const ids = [...selectedIds]
     if (ids.length === 0) return
-    if (!confirm(`确认删除选中的 ${ids.length} 个单词及其所有卡片？`)) return
+    if (!confirm(`确认删除选中的 ${ids.length} 个单词？将同时移出练习池并删除其所有卡片与复习记录。`)) return
     try {
       await deleteWords(ids)
       const idSet = new Set(ids)

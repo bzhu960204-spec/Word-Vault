@@ -19,6 +19,12 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     void deleteByWordId(Long wordId);
     void deleteByWordIdIn(java.util.Collection<Long> wordIds);
 
+    @Query("SELECT c.id FROM Card c WHERE c.word.id = :wordId")
+    List<Long> findIdsByWordId(@Param("wordId") Long wordId);
+
+    @Query("SELECT c.id FROM Card c WHERE c.word.id IN :wordIds")
+    List<Long> findIdsByWordIdIn(@Param("wordIds") java.util.Collection<Long> wordIds);
+
     @Query("SELECT c FROM Card c JOIN FETCH c.word")
     List<Card> findAllWithWord();
 

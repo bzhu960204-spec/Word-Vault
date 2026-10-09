@@ -1,12 +1,14 @@
 package com.wordvault.card;
 
 import com.wordvault.common.NotFoundException;
+import com.wordvault.review.ReviewLogRepository;
 import com.wordvault.word.Word;
 import com.wordvault.word.WordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -14,10 +16,12 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final WordRepository wordRepository;
+    private final ReviewLogRepository reviewLogRepository;
 
-    public CardService(CardRepository cardRepository, WordRepository wordRepository) {
+    public CardService(CardRepository cardRepository, WordRepository wordRepository, ReviewLogRepository reviewLogRepository) {
         this.cardRepository = cardRepository;
         this.wordRepository = wordRepository;
+        this.reviewLogRepository = reviewLogRepository;
     }
 
     @Transactional
@@ -54,6 +58,7 @@ public class CardService {
         if (!cardRepository.existsById(id)) {
             throw new NotFoundException("Card " + id + " not found");
         }
+        reviewLogRepository.deleteByCardId(id);
         cardRepository.deleteById(id);
     }
 
@@ -73,7 +78,21 @@ public class CardService {
 
     @Transactional
     public void deleteByWord(Long wordId) {
+        List<Long> cardIds = cardRepository.findIdsByWordId(wordId);
+        if (!cardIds.isEmpty()) {
+            reviewLogRepository.deleteByCardIdIn(cardIds);
+        }
         cardRepository.deleteByWordId(wordId);
+    }
+
+    @Transactional
+    public void deleteByWords(Collection<Long> wordIds) {
+        if (wordIds == null || wordIds.isEmpty()) return;
+        List<Long> cardIds = cardRepository.findIdsByWordIdIn(wordIds);
+        if (!cardIds.isEmpty()) {
+            reviewLogRepository.deleteByCardIdIn(cardIds);
+        }
+        cardRepository.deleteByWordIdIn(wordIds);
     }
 
     @Transactional
