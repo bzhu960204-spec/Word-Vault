@@ -1,6 +1,7 @@
 package com.wordvault.card;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,8 +17,14 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     List<Card> findDueCards(@Param("date") LocalDate date);
 
     long countByDueDateLessThanEqual(LocalDate date);
-    void deleteByWordId(Long wordId);
-    void deleteByWordIdIn(java.util.Collection<Long> wordIds);
+
+    @Modifying
+    @Query("DELETE FROM Card c WHERE c.word.id = :wordId")
+    void deleteByWordId(@Param("wordId") Long wordId);
+
+    @Modifying
+    @Query("DELETE FROM Card c WHERE c.word.id IN :wordIds")
+    void deleteByWordIdIn(@Param("wordIds") java.util.Collection<Long> wordIds);
 
     @Query("SELECT c.id FROM Card c WHERE c.word.id = :wordId")
     List<Long> findIdsByWordId(@Param("wordId") Long wordId);
